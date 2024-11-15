@@ -57,15 +57,17 @@ def send_message(bot, message):
         logger.debug(f"Бот отправил сообщение: {message}")
     except Exception as error:
         logger.error(f"Ошибка при отправке сообщения в Telegram: {error}")
+        # Не останавливаем работу бота, просто логируем ошибку
 
 
 def get_api_answer(timestamp):
     """Делает запрос к API и возвращает его ответ в формате Python."""
+    params = {'timestamp': timestamp}
     try:
-        response = requests.get(
-            ENDPOINT, headers=HEADERS, params={'timestamp': timestamp}
-        )
-        response.raise_for_status()  # Проверка на ошибки HTTP
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        if response.status_code != 200:
+            logger.error(f"Ошибка: код ответа API - {response.status_code}")
+            return None
         return response.json()
     except requests.exceptions.RequestException as error:
         logger.error(f"Ошибка при запросе к API: {error}")
@@ -75,14 +77,11 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверяет корректность ответа от API."""
     if not isinstance(response, dict):
-        logger.error("Ответ API не является словарём.")
-        return False
+        raise TypeError("Ответ API должен быть словарем.")
     if 'homeworks' not in response:
-        logger.error("Отсутствует ключ 'homeworks' в ответе API.")
-        return False
+        raise KeyError("Отсутствует ключ 'homeworks' в ответе API.")
     if not isinstance(response['homeworks'], list):
-        logger.error("Ключ 'homeworks' не является списком.")
-        return False
+        raise TypeError("Данные по домашним работам должны быть списком.")
     return True
 
 
@@ -91,64 +90,55 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
 
-    if not homework_name or not status:
-        logger.error(
-            "Отсутствуют обязательные поля в ответе о домашней работе."
-        )
-        return None
+    if not homework_name:
+        raise KeyError("Отсутствует ключ 'homework_name' в ответе API.")
+
+    if not status:
+        raise KeyError("Отсутствует статус домашней работы.")
 
     verdict = HOMEWORK_VERDICTS.get(status)
     if not verdict:
-        logger.error(f"Неожиданный статус домашней работы: {status}")
-        return None
+        raise ValueError(f"Неожиданный статус домашней работы: {status}")
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def main():
     """Основная логика работы бота."""
-    """Основная логика работы бота."""
-    check_tokens()  # Проверяем переменные окружения
-
-    # Создаем объект бота
+    check_tokens()  # Проверка переменных окружения
     bot = Bot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time())  # Начальная метка времени
+    timestamp = int(time.time())
 
     while True:
         try:
-            # Получаем ответ от API
             response = get_api_answer(timestamp)
 
             if response is None:
                 time.sleep(RETRY_PERIOD)
                 continue
 
-            # Проверяем ответ от API
             if not check_response(response):
                 time.sleep(RETRY_PERIOD)
                 continue
 
-            # Получаем список домашних работ
             homeworks = response['homeworks']
             if not homeworks:
                 logger.debug("Нет новых статусов домашних работ.")
                 time.sleep(RETRY_PERIOD)
                 continue
 
-            # Обрабатываем каждое домашнее задание
             for homework in homeworks:
                 message = parse_status(homework)
                 if message:
                     send_message(bot, message)
 
-            # Обновляем метку времени для следующего запроса
             timestamp = response.get('current_date', timestamp)
 
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
+            message = f"Сбой в работе программы: {error}"
             logger.error(message)
             send_message(bot, message)
-            time.sleep(RETRY_PERIOD)
+            time.sleep(RETRY_PERIOD)  # Пауза при ошибке
 
 
 if __name__ == '__main__':
