@@ -41,6 +41,7 @@ bot = Bot(token=TELEGRAM_TOKEN)
 
 
 def parse_homework_status(homework):
+    """Проверка наличия обязательных переменных окружения."""
     homework_name = homework.get('homework_name', 'название неизвестно')
     status = homework.get('status', 'статус неизвестен')
     if status in ANSWERS:
@@ -52,6 +53,7 @@ def parse_homework_status(homework):
 
 
 def get_homeworks(current_timestamp):
+    """Извлекает статус домашней работы и формирует сообщение для Telegram."""
     if current_timestamp is None:
         current_timestamp = int(time.time())
     url = f'{URL_YAND}homework_statuses/'
@@ -67,17 +69,20 @@ def get_homeworks(current_timestamp):
 
 
 def send_message(message):
+    """Отправка сообщения в Telegram."""
     bot.send_message(CHAT_ID, message)
     logging.info('Сообщение отправлено!')
 
 
 def send_exc_message(e):
+    """Отправка сообщения об ошибке."""
     exc = f'Бот упал с ошибкой: {e}'
     logging.exception(f'ошибка{e}')
     send_message(exc)
 
 
 def main():
+    """Основная логика работы бота."""
     current_timestamp = int(time.time())
 
     while True:
