@@ -69,11 +69,11 @@ def get_api_answer(timestamp):
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         if response.status_code != 200:
             logger.error(f"Ошибка: код ответа API - {response.status_code}")
-            return {}
+            return None
         return response.json()
     except requests.exceptions.RequestException as error:
         logger.error(f"Ошибка при запросе к API: {error}")
-        return {}
+        return None
 
 
 def check_response(response):
