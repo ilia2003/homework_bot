@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from charset_normalizer import from_date
 import requests
 from telegram import Bot
 from dotenv import load_dotenv
@@ -63,16 +64,17 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Делает запрос к API и возвращает его ответ в формате Python."""
-    params = {'timestamp': timestamp}
+    params = {'timestamp': timestamp, 'from_date': from_date}
+
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         if response.status_code != 200:
             logger.error(f"Ошибка: код ответа API - {response.status_code}")
-            return None
+            return {}
         return response.json()
     except requests.exceptions.RequestException as error:
         logger.error(f"Ошибка при запросе к API: {error}")
-        return None
+        return {}
 
 
 def check_response(response):
@@ -134,12 +136,11 @@ def main():
                     send_message(bot, message)
 
             timestamp = response.get('current_date', timestamp)
-
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
-            logger.error(message)
-            send_message(bot, message)
-            time.sleep(RETRY_PERIOD)  # Пауза при ошибке
+        logger.error(message)
+        send_message(bot, message)
+        time.sleep(RETRY_PERIOD)  # Ensure sleep is always executed
 
 
 if __name__ == '__main__':
