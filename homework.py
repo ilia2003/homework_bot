@@ -135,6 +135,7 @@ def main():
                 message = parse_status(homework)
                 if message:
                     send_message(bot, message)
+                    time.sleep(RETRY_PERIOD)
 
             timestamp = response.get('current_date', timestamp)
 
