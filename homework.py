@@ -67,11 +67,16 @@ def get_api_answer(timestamp):
     params = {'timestamp': timestamp, 'from_date': from_path}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-        response.raise_for_status()
+        if response.status_code != 200:
+            logger.error(f"Ошибка API: код ответа - {response.status_code}")
+            response.raise_for_status()  # Вызывает HTTPError для кодов != 200
         return response.json()
-    except requests.RequestException as error:
-        logger.error(f"Ошибка при запросе к API: {error}")
-        return None  # Возвращаем None при возникновении исключения
+    except requests.HTTPError as http_err:
+        logger.error(f"HTTP ошибка при запросе к API: {http_err}")
+        raise
+    except requests.RequestException as req_err:
+        logger.error(f"Ошибка при запросе к API: {req_err}")
+        raise
 
 
 def check_response(response):
