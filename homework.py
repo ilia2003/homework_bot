@@ -73,9 +73,8 @@ def get_api_answer(timestamp):
         logger.error(f"HTTP ошибка при запросе к API: {http_err}")
         raise
     except requests.RequestException as req_err:
-        # Логирование других ошибок запроса (например, ошибки сети)
         logger.error(f"Ошибка при запросе к API: {req_err}")
-        raise  # Повторно выбрасываем исключение для обработки в тесте
+        raise
 
 
 def check_response(response):
