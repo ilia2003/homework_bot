@@ -67,13 +67,11 @@ def get_api_answer(timestamp):
     params = {'timestamp': timestamp, 'from_date': from_path}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-        response.raise_for_status()  # Автоматическая проверка статуса ответа
+        response.raise_for_status()
         return response.json()
     except requests.RequestException as error:
-        # Логирование с подробным описанием
         logger.error(f"Ошибка при запросе к API: {error}")
-        # Повторно выбрасываем исключение, если это ожидается тестом
-        raise ConnectionError(f"Ошибка соединения с API: {error}") from error
+        return None  # Возвращаем None при возникновении исключения
 
 
 def check_response(response):
