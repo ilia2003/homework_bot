@@ -74,7 +74,6 @@ def get_api_answer(timestamp):
         raise
     except requests.RequestException as req_err:
         logger.error(f"Ошибка при запросе к API: {req_err}")
-        raise
 
 
 def check_response(response):
