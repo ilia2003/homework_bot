@@ -74,7 +74,7 @@ def get_api_answer(timestamp):
             )
         # Возвращаем данные в формате JSON
         return response.json()
-    except requests.exceptions.RequestException as error:
+    except requests.RequestExceptio as error:
         logging.error(f"Ошибка при запросе к API: {error}")
         raise  # Пробрасываем ошибку дальше
 
