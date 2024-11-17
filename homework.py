@@ -72,10 +72,11 @@ def get_api_answer(timestamp):
             raise ValueError(
                 f"Ошибка API: код ответа - {response.status_code}"
             )
+        # Возвращаем данные в формате JSON
         return response.json()
     except requests.exceptions.RequestException as error:
         logging.error(f"Ошибка при запросе к API: {error}")
-        raise
+        raise  # Пробрасываем ошибку дальше
 
 
 def check_response(response):
