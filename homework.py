@@ -5,10 +5,10 @@ import time
 from http import HTTPStatus
 
 import requests
+from charset_normalizer import from_path
 from dotenv import load_dotenv
 from telegram import Bot
 from telegram.error import TelegramError
-from charset_normalizer import from_path
 
 load_dotenv()
 bot = Bot
@@ -142,9 +142,8 @@ def main():
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.exception(message)
-            if last_message != message:
-                if send_message(bot, message):
-                    last_message = message
+            if last_message != message and send_message(bot, message):
+                last_message = message
         finally:
             time.sleep(RETRY_PERIOD)
 
