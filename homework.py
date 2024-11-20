@@ -1,14 +1,14 @@
-import sys
 import logging
 import os
-import requests
+import sys
 import time
-
-from charset_normalizer import from_path
-from dotenv import load_dotenv
 from http import HTTPStatus
+
+import requests
+from dotenv import load_dotenv
 from telegram import Bot
 from telegram.error import TelegramError
+from charset_normalizer import from_path
 
 load_dotenv()
 bot = Bot
@@ -55,14 +55,16 @@ def check_tokens():
 
 
 def send_message(bot, message):
-    """Отправка сообщения в Telegram."""
+    """Отправка сообщения в Telegram с возвратом булевого значения."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug(f"Бот отправил сообщение: {message}")
+        return True  # Успешная отправка
     except TelegramError as error:
         logger.error(f"Ошибка при отправке сообщения в Telegram: {error}")
     except Exception as error:
         logger.exception(f"Неизвестная ошибка при отправке сообщения: {error}")
+    return False  # Сбой при отправке
 
 
 def get_api_answer(timestamp):
@@ -124,7 +126,7 @@ def main():
     check_tokens()
     bot = Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-
+    last_message = None
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -134,8 +136,15 @@ def main():
                 message = parse_status(homework)
                 if send_message(bot, message):
                     timestamp = response.get('current_date', timestamp)
+                    last_message = None
+            else:
+                logger.debug("Новых статусов для проверки домашних работ нет.")
         except Exception as error:
-            logger.exception(f"Сбой в работе программы: {error}")
+            message = f"Сбой в работе программы: {error}"
+            logger.exception(message)
+            if last_message != message:
+                if send_message(bot, message):
+                    last_message = message
         finally:
             time.sleep(RETRY_PERIOD)
 
